@@ -10,6 +10,8 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.chart.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
@@ -31,7 +33,7 @@ public class RainfallVisualiser extends Application {
         int height = 500;
 
         Button selectFile = new Button("Select File:");
-        Label label = new Label("No file selected");
+        Label label = new Label(" No file selected");
         HBox hBox = new HBox(selectFile, label);
         BorderPane root = new BorderPane();
         root.setTop(hBox);
@@ -56,15 +58,20 @@ public class RainfallVisualiser extends Application {
         final NumberAxis yAxis = new NumberAxis();
         bc = new BarChart<>(xAxis, yAxis);
         bc.setTitle("Rainfall Visualiser");
+        bc.setCategoryGap(0);
+        bc.setBarGap(0);
+        bc.setAnimated(false);
+
+
         xAxis.setLabel("");
         yAxis.setLabel("Rainfall (mm)");
         root.setCenter(bc);
 
         stage.setTitle("Rainfall Visualiser");
-        stage.show();
         Scene scene = new Scene(root, width, height);
         stage.setScene(scene);
         stage.setResizable(false);
+        stage.show();
     }
 
     private void visualiseData(String path) throws IOException {
@@ -99,9 +106,23 @@ public class RainfallVisualiser extends Application {
             RainStats rain = item.getValue();
             double total = rain.getTotal();
             String[] keyContents = key.split("_", -1);
-            String formattedKey = keyContents[1].substring(5) + "/" + keyContents[0].substring(4);
+            String formattedKey = keyContents[1].substring(5) + "/" + keyContents[0].substring(4);;
             series.getData().add(new XYChart.Data<>(formattedKey, total));
+
         }
         bc.getData().addAll(series);
+
+        for(XYChart.Series<String, Number> series1 : bc.getData()) {
+            for(XYChart.Data<String, Number> data : series1.getData()) {
+                String formattedKey = data.getXValue();
+                String[] formattedKeyComponents = formattedKey.split("/", -1);
+                String key = "year" + formattedKeyComponents[1] + "_month" + formattedKeyComponents[0];
+                RainStats rain = stats.get(key);
+
+                Tooltip tooltip = new Tooltip();
+                tooltip.setText(data.getXValue() + ":\n" + "min: " + rain.getMinRain() + "\nmax: " + rain.getMaxRain() + "\ntotal: " + rain.getTotal());
+                Tooltip.install(data.getNode(), tooltip);
+            }
+        }
     }
 }
